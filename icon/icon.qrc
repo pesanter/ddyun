@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>cloud-download.png</file>
+    <file>cloud-upload.png</file>
+    <file>yun.png</file>
+    <file>close.png</file>
+    <file>minimize.png</file>
+  </qresource>
+</RCC>

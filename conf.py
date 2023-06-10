@@ -3,15 +3,7 @@ import pickle
 from Crypto.Cipher import AES  
 from Crypto.Util.Padding import pad, unpad  
   
-# 配置内容，例如：  
-config = {  
-    # 设置七牛云存储的ACCESS_KEY和SECRET_KEY  
-    'access_key': 'HnG5pHkPXsDcMso0IfLP3D0XlrbI8vRi3x3G1Utq',  
-    'secret_key': '9vMKMlChpZJvWGAj3LxToU9wzXZ0jKlV_DQeIfqS',  
-    # 定义上传到七牛云存储的bucket名称和文件路径  
-    'bucket_name': 'pst-ddyun',  
-    'local_dir': 'D://docs/ddyun/'  
-}  
+
 # 加密密钥，需要保密存储  
 key = '9vMKMlChpZJvWGAj3LxToU9wzXZ0jKlV'  
   
@@ -55,7 +47,5 @@ def persist_config(encrypted_config, filename):
     with open(filename, 'wb') as f:  
         f.write(encrypted_config.encode('utf-8'))  
   
-# 测试代码，将加密后的配置内容写入文件并从文件中读取解密后的配置内容打印出来  
-encrypted_config = encrypt_config(config, key)  
-persist_config(encrypted_config, 'config.pickle')  
-print(get_config())
+# 配置内容，例如：  
+config = get_config()
