@@ -35,22 +35,27 @@ class QiniuS3:
     def doRemoteFileCheck(self, key, local_file):
         # 获取文件的状态信息
         ret, info = self.bucket.stat(conf.config['bucket_name'], key)
-        if info.status_code == 200:
-            # 提取文件的 MD5 值
-            file_md5 = ret['md5']
-            if os.path.exists(local_file):
-                if os.path.isfile(local_file):
-                    if QiniuS3.get_md5(local_file) == file_md5:
-                        return False
-                    else:
-                        return True
-                else:
-                    return os.path.basename(local_file) != key.replace("/","")
-            else:
-                return True
-        else:
+        if info.status_code != 200:
+            print('Error getting file status:', info.error)
             return True
-        assert 'hash' in ret
+
+        # 提取文件的 MD5 值
+        file_md5 = ret['md5']
+        # 如果本地文件存在
+        if os.path.exists(local_file):
+            # 如果本地路径是一个文件
+            if os.path.isfile(local_file):
+                # 比较本地文件和云端文件的MD5，如果不同，需要同步
+                return QiniuS3.get_md5(local_file) != file_md5
+            # 如果本地路径是一个目录
+            elif os.path.isdir(local_file):
+                # 如果路径名不同，则需要同步
+                local_dir_name = os.path.basename(local_file)
+                remote_dir_name = os.path.dirname(key).split('/')[-1]  # 提取云端的目录名
+                return local_dir_name != remote_dir_name
+        else:
+            # 如果本地文件不存在，则需要同步
+            return True
         
     def upload_directory(self, upDir):
         for root, dirs, files in os.walk(upDir):
@@ -61,7 +66,7 @@ class QiniuS3:
 
             for directory in dirs:
                 sub_directory = os.path.join(root, directory)
-                dir = os.path.relpath(sub_directory, upDir)
+                dir = os.path.relpath(sub_directory, upDir).replace('\\', '/')
                 key = dir+'/'
                 if QiniuS3.doRemoteFileCheck(self, key, sub_directory):
                     # 生成上传 Token
@@ -80,38 +85,30 @@ class QiniuS3:
         if ret is not None:
             for item in ret['items']:
                 if QiniuS3.doRemoteFileCheck(self, item['key'], downloadDir  + item['key']):
-                    # 创建下载链接
-                    # base_url = 'http://%s/%s' % (conf.config['bucket_name'] + '.' + conf.config['endpoint'], urlsafe_b64encode(item['key'].encode()).decode())
-                    base_url = 'http://%s/%s' % (conf.config['domain'], item['key'])
+                    local_file_path = os.path.join(downloadDir, item['key'])
+                    local_dir = os.path.dirname(local_file_path)
+                    
+                    # 检查并创建目录
+                    if not os.path.exists(local_dir):  
+                        os.makedirs(local_dir, exist_ok=True)  
 
-                    # 生成私有下载链接，有时效性
-                    private_url = self.q.private_download_url(base_url, expires=3600)
+                    # 判断是否为目录
+                    if not item['key'].endswith('/'):
+                        # 创建下载链接
+                        base_url = 'http://%s/%s' % (conf.config['domain'], item['key'])
 
-                    # 下载到本地文件
-                    response = requests.get(private_url)
+                        # 生成私有下载链接，有时效性
+                        private_url = self.q.private_download_url(base_url, expires=3600)
 
-                    if response.status_code == 200:
-                        # 检查文件是否存在  
-                        if os.path.exists(downloadDir):  
-                            if(item['key'].endswith('/')):
-                                os.makedirs(os.path.join(downloadDir, item['key']), exist_ok=True) 
-                            else:
-                                # 创建新文件  
-                                with open(os.path.join(downloadDir, item['key']), "wb") as f:  
-                                    f.write(response.content)  
-                            print(f"已创建 {item['key']}")  
-                        else:  
-                            # 创建新目录  
-                            os.makedirs(downloadDir, exist_ok=True)  
+                        # 下载到本地文件
+                        response = requests.get(private_url)
+
+                        if response.status_code == 200:
                             # 在新目录中创建新文件  
-                            with open(os.path.join(downloadDir, item['key']), "wb") as f:  
+                            with open(local_file_path, "wb") as f:  
                                 f.write(response.content)  
                             print(f"已创建 {item['key']}")
-                    else:
-                        print('Download failed with status code:', response.status_code)
-        else:
-            print(info)  # 打印出错误信息
+                        else:
+                            print('Download failed with status code:', response.status_code)
+
                 
-qiniu_s3 = QiniuS3()
-# qiniu_s3.download_directory(conf.config['local_dir'])    
-qiniu_s3.upload_directory(conf.config['local_dir'])

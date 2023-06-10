@@ -14,8 +14,8 @@ import conf
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(870, 944)
-
+        MainWindow.resize(756, 546)
+        self.manWindow = MainWindow
 
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -411,12 +411,18 @@ class Ui_MainWindow(object):
         self.resize(self.sizeHint())
 
     def uploadDir(self):
+        _translate = QtCore.QCoreApplication.translate
+        self.pushButton.setText(_translate("MainWindow", " ddyun  开始上传，请稍等..."))
         qiniu_s3 = QiniuS3()
         qiniu_s3.upload_directory(conf.config['local_dir'])
+        self.pushButton.setText(_translate("MainWindow", " ddyun  上传完成"))  # 更新状态消息
 
     def downloadDir(self):
+        _translate = QtCore.QCoreApplication.translate
+        self.pushButton.setText(_translate("MainWindow", " ddyun  开始下载..."))
         qiniu_s3 = QiniuS3()
         qiniu_s3.download_directory(conf.config['local_dir'])
+        self.pushButton.setText(_translate("MainWindow", " ddyun  下载完成"))  # 更新状态消息
 
     def loadConfig(self):
         self.domain.setText(conf.config['domain'])
@@ -432,7 +438,7 @@ class Ui_MainWindow(object):
         conf.config['bucket_name'] = self.bucket.text()
         conf.config['local_dir'] = self.local_dir.text()
         encrypted_config = conf.encrypt_config(conf.config, conf.key)  
-        conf.persist_config(encrypted_config, 'config.pickle')  
+        conf.persist_config(encrypted_config, 'config.pickle')
 
 if __name__ == "__main__":
     import sys
