@@ -412,14 +412,14 @@ class Ui_MainWindow(object):
 
     def uploadDir(self):
         _translate = QtCore.QCoreApplication.translate
-        self.pushButton.setText(_translate("MainWindow", " ddyun  开始上传，请稍等..."))
+        # self.pushButton.setText(_translate("MainWindow", " ddyun  开始上传，请稍等..."))
         qiniu_s3 = QiniuS3()
         qiniu_s3.upload_directory(conf.config['local_dir'])
         self.pushButton.setText(_translate("MainWindow", " ddyun  上传完成"))  # 更新状态消息
 
     def downloadDir(self):
         _translate = QtCore.QCoreApplication.translate
-        self.pushButton.setText(_translate("MainWindow", " ddyun  开始下载..."))
+        # self.pushButton.setText(_translate("MainWindow", " ddyun  开始下载..."))
         qiniu_s3 = QiniuS3()
         qiniu_s3.download_directory(conf.config['local_dir'])
         self.pushButton.setText(_translate("MainWindow", " ddyun  下载完成"))  # 更新状态消息
